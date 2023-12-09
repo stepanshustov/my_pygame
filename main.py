@@ -10,22 +10,30 @@ def load_image(name):
 
 if __name__ == '__main__':
     pygame.init()
-    size = width, height = 700, 700
+    size = width, height = 1280, 720
     screen = pygame.display.set_mode(size)
     running = True
-    x = y = -1
-    image = load_image("cr.png")
-    image = pygame.transform.scale(image, (100, 100))
+    fon = load_image("fon.jpg")
+    x = y = 0
+    clock = pygame.time.Clock()
     while running:
-        pygame.mouse.set_visible(False)
+        clock.tick(60)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.MOUSEMOTION:
-                x, y = event.pos
 
+        pr = pygame.key.get_pressed()
+
+        if pr[pygame.K_LEFT]:
+            x -= 2
+        if pr[pygame.K_RIGHT]:
+            x += 2
+        if pr[pygame.K_UP]:
+            y -= 2
+        if pr[pygame.K_DOWN]:
+            y += 2
+        x %= width
+        y %= height
         screen.fill((0, 0, 0))
-        if pygame.mouse.get_focused() and x != -1:
-            screen.blit(image, (x, y))
-
+        screen.blit(fon, (x - width, y - height))
         pygame.display.flip()
