@@ -1,9 +1,6 @@
 import pygame
 import os
 
-MINWIDTH = 800
-MINHEIGHT = 450
-
 
 def load_image(name):
     fullname = os.path.join('data', name)
@@ -22,27 +19,17 @@ class Pers(pygame.sprite.Sprite):
 
 
 class Button:
-    def __init__(self, name_button, x_p: float(), y_p: float, w_p: float(), h_p: float(), color_rect='#ff0000', text="",
-                 color_txt='#00ff00', sh=0):
-        self.x_p = x_p
-        self.y_p = y_p
-        self.w_p = w_p
-        self.h_p = h_p
-        self.pos = self.x, self.y = width * x_p, height * y_p
+    def __init__(self, name_button, x, y, w=50, h=100, color_fon='#ff0000', text="", color_txt='#00ff00', sh=0):
+        self.pos = self.x, self.y = x, y
         self.name = name_button
-        self.color_rect = color_rect
+        self.color_fon = color_fon
         self.color_txt = color_txt
-        self.size = self.w, self.h = width * w_p, height * h_p
+        self.size = self.h, self.w = h, w
         self.text = text
         self.sh = sh
 
-    def update(self, old_w, old_h, new_w, new_h):
-        self.pos = self.x, self.y = new_w * self.x_p, new_h * self.y_p
-        self.size = self.w, self.h = new_w * self.w_p, new_h * self.h_p
-        self.sh = int(self.sh * new_w * new_h / old_h / old_w)
-
     def draw(self, screen):
-        pygame.draw.rect(screen, self.color_rect, (self.x, self.y, self.w, self.h), 2)
+        pygame.draw.rect(screen, self.color_fon, (self.x, self.y, self.w, self.h), 0)
         if self.sh:
             font = pygame.font.Font(None, self.sh)
             text = font.render(self.text, True, self.color_txt)
@@ -57,6 +44,49 @@ class Button:
         self.text, self.color_txt, self.sh = text, color_txt, sh
 
 
+class Board:
+    def __init__(self, width, height, csz=70, left=10, top=10):
+        self.width = width
+        self.height = height
+        self.board = [[0] * width for _ in range(height)]
+        self.cell_size = csz
+        self.left = left
+        self.top = top
+
+    def render(self, screen):
+        for i in range(self.height):
+            for j in range(self.width):
+                pygame.draw.rect(screen, '#ffffff',
+                                 (
+                                     self.left + i * self.cell_size, self.top + j * self.cell_size,
+                                     self.cell_size, self.cell_size), 1)
+
+    def get_cell(self, mouse_pos):
+        x, y = mouse_pos
+        if x < self.left or y < self.top \
+                or x > self.cell_size * self.height + self.left \
+                or y > self.cell_size * self.width + self.top:
+            return
+        x = (x - self.left) // self.cell_size
+        y = (y - self.top) // self.cell_size
+        return x, y
+
+    def on_click(self, cell_coords):
+        x, y = cell_coords
+        if self.board[x][y] == 1:
+            self.board[x][y] = 2
+        else:
+            self.board[x][y] = 1
+
+    def get_click(self, mouse_pos):
+        coords = self.get_cell(mouse_pos)
+        if coords:
+            x, y = coords
+        else:
+            return
+        self.on_click((x, y))
+
+
 def draw_buttons(mas, screen):
     for i in range(len(mas)):
         mas[i].draw(screen)
@@ -65,16 +95,14 @@ def draw_buttons(mas, screen):
 if __name__ == '__main__':
     pygame.init()
     size = width, height = 1280, 720
-    screen = pygame.display.set_mode(size, pygame.RESIZABLE)
+    screen = pygame.display.set_mode(size)
     running = True
-    x = y = 500
+    x = y = 0
     clock = pygame.time.Clock()
     all_sprites = pygame.sprite.Group()
-
-    buttons = list()
-    buttons.append(Button("play", 0.2, 0.2, 0.1, 0.1, text="Play", sh=50))
-    orig_fon = load_image('fon.jpg')
-    fon = pygame.transform.scale(orig_fon, (width, height))
+    buttons = []
+    board = Board(9, 18, 70, 10, 80)
+    # buttons.append(Button('play', 300, 300, 200, 100, 'blue', 'Play', 'red', 30))
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -88,18 +116,9 @@ if __name__ == '__main__':
                     y = max(0, y - 1)
                 elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
                     y = min(height, y + 1)
-            if event.type == pygame.VIDEORESIZE:
-                old_size = size
-                width, height = pygame.display.get_surface().get_size()
-                width = max(width, MINWIDTH)
-                height = max(height, MINHEIGHT)
-                size = width, height
-                for el in buttons:
-                    el.update(*old_size, *size)
-                fon = pygame.transform.scale(orig_fon, (width, height))
-                screen = pygame.display.set_mode(size, pygame.RESIZABLE)
-        clock.tick(50)
-        screen.blit(fon, (0, 0))
+        screen.fill('black')
+        clock.tick(60)
         draw_buttons(buttons, screen)
+        board.render(screen)
         all_sprites.draw(screen)
         pygame.display.flip()
